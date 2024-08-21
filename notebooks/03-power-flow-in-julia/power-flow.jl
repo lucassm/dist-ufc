@@ -10,6 +10,11 @@ begin
 	using Printf
 end
 
+# ╔═╡ 14b1d201-ca7d-4d70-aae1-ea33d6b9b008
+md"""
+## Montagem da Matriz de Impedâncias Primitiva
+"""
+
 # ╔═╡ 231f501e-4893-11ef-2712-61982ea6360c
 D = [0.0244 2.5 7.0 5.6569;
 	 2.5 0.0244 4.5 4.272;
@@ -50,6 +55,11 @@ Conversão da matriz de impedâncias primitiva de Ohms por milha para Ohms por q
 
 # ╔═╡ 1acc18f4-e082-4400-ad9e-111c0e9a47d4
 Zabc * 0.621371
+
+# ╔═╡ a08bf787-5af0-41ba-9416-dec1c61869a5
+md"""
+## Montagem da Matriz de Impedâncias de Fase (Redução de Kron)
+"""
 
 # ╔═╡ d1e1d24b-bc45-4bfd-b895-02cd04ea95bd
 md"""
@@ -95,6 +105,23 @@ Matriz de Impedâncias de Fase Reduzida de Kron em Ohms:
 # ╔═╡ 9d58d71a-28fc-4695-b445-2215083fccf4
 Zabck_ = Zabck * l
 
+# ╔═╡ cfd29b88-f19a-49f5-b4f8-3a5d58a152cb
+md"""
+## Montagem da Matriz de Impedâncias de Sequência
+"""
+
+# ╔═╡ b7558e5a-7532-485d-aef5-6ab66f07fc19
+begin
+	zs = (Zabck[1, 1] + Zabck[2, 2] + Zabck[3, 3]) / 3.0
+	zm 	= (Zabck[1, 2] + Zabck[1, 3] + Zabck[2, 1]) / 3.0
+	Zabcks = [zs zm zm; zm zs zm; zm zm zs]
+end
+
+# ╔═╡ bb455147-84c9-4d61-95e7-e1c3dad00ec3
+md"""
+## Cálculo das Matrizes características da Linha
+"""
+
 # ╔═╡ a9839a94-86d2-4cf8-bca0-9927bcc2daf1
 a = I
 
@@ -123,6 +150,18 @@ md"Definição de duas funções úteis:
 
 # ╔═╡ b3a75a45-7aa6-4b76-9fe0-95bf3236e7fc
 p(m, a) = m * cis(deg2rad(a))
+
+# ╔═╡ 40169f3f-55e2-4a95-96ff-be550d9fc815
+as_ = p(1.0, 120.0)
+
+# ╔═╡ 9005d12e-67f8-458e-9a68-9c9d9cc0786b
+As = [1.0 1.0 1.0; 1.0 as_^2 as_; 1.0 as_ as_^2]
+
+# ╔═╡ 2e4f11f8-c22f-4153-b71f-ab8b80a4a421
+Z012 = inv(As) * Zabck *  As
+
+# ╔═╡ 4618fbce-6fa2-4dcd-bd8b-b83598bc4706
+Z012s = inv(As) * Zabcks *  As
 
 # ╔═╡ 99f99038-171a-49c4-bdf0-149f21652e95
 function dv(v)
@@ -285,6 +324,7 @@ version = "5.8.0+1"
 
 # ╔═╡ Cell order:
 # ╠═2ac9ef60-48af-4469-823f-19f39b02fd5a
+# ╟─14b1d201-ca7d-4d70-aae1-ea33d6b9b008
 # ╠═231f501e-4893-11ef-2712-61982ea6360c
 # ╠═6ac960cb-768f-4a8d-8f00-cfee2e929710
 # ╠═a12d9137-5191-4e8a-ab01-c77e7429ea22
@@ -292,6 +332,7 @@ version = "5.8.0+1"
 # ╠═dd221b04-6a9f-4329-84a7-992c90a7844e
 # ╟─4aa82beb-a1c9-42f4-b18b-3a1947032eee
 # ╠═1acc18f4-e082-4400-ad9e-111c0e9a47d4
+# ╟─a08bf787-5af0-41ba-9416-dec1c61869a5
 # ╟─d1e1d24b-bc45-4bfd-b895-02cd04ea95bd
 # ╠═e874b95f-5ea7-469d-ac4e-879efff9a006
 # ╟─ba31541d-dd91-40dd-8750-cae3a475656c
@@ -303,6 +344,13 @@ version = "5.8.0+1"
 # ╠═311225df-49e4-4456-a752-0039f33dbba9
 # ╟─79f0dadc-da16-48c3-a79c-18f9c8da8fb8
 # ╠═9d58d71a-28fc-4695-b445-2215083fccf4
+# ╠═cfd29b88-f19a-49f5-b4f8-3a5d58a152cb
+# ╠═40169f3f-55e2-4a95-96ff-be550d9fc815
+# ╠═9005d12e-67f8-458e-9a68-9c9d9cc0786b
+# ╠═2e4f11f8-c22f-4153-b71f-ab8b80a4a421
+# ╠═b7558e5a-7532-485d-aef5-6ab66f07fc19
+# ╠═4618fbce-6fa2-4dcd-bd8b-b83598bc4706
+# ╠═bb455147-84c9-4d61-95e7-e1c3dad00ec3
 # ╠═a9839a94-86d2-4cf8-bca0-9927bcc2daf1
 # ╠═7fd02a9f-573a-4e59-8cb1-2c20de856a22
 # ╠═02168ec5-7999-4b19-99e8-3a349ffa7f4c
@@ -333,10 +381,10 @@ version = "5.8.0+1"
 # ╟─49c5b75c-33a4-4c0f-a970-eaf9200e3982
 # ╠═924fefd3-93f4-45ea-b414-d6540bf1b077
 # ╠═9c937f87-3fa3-488b-a516-d1207f28e326
-# ╠═01e6a603-63ce-4369-93f6-4d5008e4b499
+# ╟─01e6a603-63ce-4369-93f6-4d5008e4b499
 # ╠═8b1b27d2-00ff-4bcd-8a72-ef67e01a3c76
 # ╠═055b2396-b55e-46f4-a331-1aeb7cd44550
-# ╠═51cdf7ed-c72d-4056-8cf2-65212b86bfab
+# ╟─51cdf7ed-c72d-4056-8cf2-65212b86bfab
 # ╠═d2af89d7-3dd1-4c19-9659-4edb2e6cba03
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
