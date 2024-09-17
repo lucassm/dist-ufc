@@ -1,0 +1,135 @@
+// -----------------------------------------------------------------------//
+// Autores: Paulo Radatz e Celso Rocha
+// e-mails: opendss.brasil@gmail.com, paulo.radatz@gmail.com e celsorocha11@gmail.com 
+// -----------------------------------------------------------------------//
+
+// Reinicia o Programa
+Clear
+
+// Dados de Fronteira
+New Circuit.Equivalente bus1=A pu=1.02 basekv=138 
+~ Z0=[0.025862916, 0.077588748] Z1=[0.023094242, 0.092376969]
+
+// Dados do Transformador
+New Transformer.Trafo phases=3 windings=2 %loadloss=0.15 xhl=5 %noloadloss=0.015 %imag=2 
+~ wdg=1 bus=A kv=138 kva=3000 conn=delta
+~ wdg=2 bus=B kv=13.8 kva=3000 conn=wye
+~ sub=Yes subname=Subestacao
+
+// Dados dos Arranjos
+New Linecode.MeuArranjo4 nphases=4 basefreq=60 units=km
+~ rmatrix = [0.249 |0.059 0.249 |0.059 0.059 0.249 |0.059 0.059 0.059 0.427]       !ohm/km
+~ xmatrix = [0.878 |0.529 0.878 |0.451 0.484 0.878 |0.467 0.488 0.476 0.960]   	   !ohm/km
+~ cmatrix = [9.353 |-3.028 9.858 |-1.160 -1.928 8.891 |-1.393 -1.772 -1.782 8.809] !nF/km
+~ neutral=4 kron=No
+
+New Linecode.MeuArranjo3 nphases=3 basefreq=60 units=km
+~ rmatrix = [0.249 |0.059 0.249 |0.059 0.059 0.249]     !ohm/km
+~ xmatrix = [0.878 |0.488 0.878 |0.488 0.488 0.878]     !ohm/km
+~ cmatrix = [8.932 |-2.290 8.932 |-2.290 -2.290 8.932]  !nF/km
+
+// Dados dos Trechos
+New Line.LinhaBC bus1=B.1.2.3.0 bus2=C.1.2.3.4 length=2.8 units=km linecode=MeuArranjo4
+New Line.LinhaCD bus1=C.1.2.3 bus2=D.1.2.3 length=2.6 units=km linecode=MeuArranjo3
+
+// Dados das Curvas de Carga
+New Loadshape.industrial npts=24 interval=1 
+~ mult=(0.1 0.1 0.2 0.3 0.3 0.4 0.6 1.2 1.8 1.8 1.9 1.9 1.4 1.6 1.8 1.7 1.7 1.1 0.8 0.6 0.5 0.4 0.2 0.2)  
+New Loadshape.residencial npts=24 interval=1 
+~ mult=(0.6 0.5 0.4 0.4 0.5 0.8 1.0 0.8 0.8 0.9 1.0 1.0 1.1 0.9 0.9 0.9 1.0 1.2 1.5 1.5 1.7 1.5 1.2 0.8)
+
+// Dados das Cargas
+// Model=1 -> Potencia Constante
+New Load.CargaC phases=1 bus1=C.1.4 kv=7.9674 kw=500 pf=0.92 model=1 daily=residencial
+New Load.CargaD phases=3 bus1=D conn=wye kv=13.8 kw=500 pf=0.92 model=1 daily=industrial
+
+//==========================================================================================
+// Definição de um PVSystem
+// Curva de Eficência do Inversor
+New XYCurve.Eff npts=4 xarray=[.1 .2 .4 1.0] yarray=[.86 .9 .93 .97]
+
+// Curva do fator de correção da potência DC
+// Potência DC nominal para T=25
+New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1.2 1.0 .8 .6]
+
+// Curva de Radiacão Diária
+New LoadShape.Irrad npts=24 interval=1 
+~ mult=[0 0 0 0 0 0 .1 .2 .3 .5 .8 .9 1.0 1.0 .99 .9 .7 .4 .1 0 0 0 0 0]
+
+// Curva de temperatura diária no painel
+New TShape.Temp npts=24 interval=1 
+~ temp=[25 25 25 25 25 25 25 25 35 40 45 50 60 60 55 40 35 30 25 25 25 25 25 25]
+
+// PVSystem
+New PVSystem.PV_A phases=3 bus1=A_PV Pmpp=8000 kV=0.38 kVA=8000 conn=wye 
+~ EffCurve=Eff P-TCurve=FatorPvsT pf=1 irradiance=0.98 daily=Irrad Tdaily=Temp
+//==========================================================================================
+
+// Definição de um Transformador
+New Transformer.Trafo_PV_A phases = 3 windings=2 xhl=5 %noloadloss=0.39 %loadloss=1.47  
+~ wdg =1  bus=D  kV=13.8 kVA=8000 conn=wye 
+~ wdg =2  bus=A_PV  kV=0.38 kVA=8000 conn=wye
+
+
+// Medidor
+New EnergyMeter.MedidorSub element=Transformer.Trafo terminal=1
+
+// Monitores
+// Monitores na Sub (deve ser conectado em um elemento e nao em uma barra)
+New Monitor.PotenciaSub element=Transformer.Trafo terminal=1 mode=1 ppolar=no
+New Monitor.TensaoSub element=Transformer.Trafo terminal=1 mode=0
+
+// Monitores na CargaD 
+New Monitor.PotenciaCargaD element=Load.CargaD terminal=1 mode=1 ppolar=no
+New Monitor.TensaoCargaD element=Load.CargaD terminal=1 mode=0  
+
+//Monitores no PV_A
+New monitor.Mon_PV_A_P element=PVSystem.PV_A terminal=1 mode=1 ppolar=no
+New monitor.Mon_PV_A_V_I element=PVSystem.PV_A terminal=1 mode=0 vipolar=yes
+
+// Definindo Tensoes de base
+Set voltagebases=[138 13.8 0.38]
+Calcvoltagebases
+  
+// Time-Series Mode
+Set controlmode=Static
+Set mode=Daily
+Set stepsize=1h
+Set number=13
+Solve
+
+// Coordenadas
+BusCoords Coordenadas.csv
+
+// Resultados do Medidor
+// Show meters
+// Export meters
+
+// ==========================
+// Resultados dos Monitores
+// ==========================
+
+// Monitor de Potencia da Sub
+// Export monitors potenciasub
+// Plot monitor object= potenciasub channels=(1 3 5 )
+
+// // Monitor de Tensao da Sub
+// Export monitors tensaosub
+// Plot monitor object= tensaosub channels=(1 3 5 ) bases=[79674.3 79674.3 79674.3]
+
+// // Monitor de Potencia da CargaD
+// Export monitors potenciacargad
+// Plot monitor object= potenciacargad channels=(1 3 5 )
+
+// // Monitor de Tensao da CargaD
+// Export monitors tensaocargad
+// Plot monitor object= tensaocargad channels=(1 3 5 ) bases=[7967.4 7967.4 7967.4]
+
+
+// // Monitor de Potencia no PV_A
+// Export monitors Mon_PV_A_P
+// Plot monitor object= Mon_PV_A_P channels=(1 3 5 )
+
+// // Monitor de Tensao no PVA
+// Export monitors Mon_PV_A_V_I
+// Plot monitor object= Mon_PV_A_V_I channels=(1 3 5 ) bases=[0.38 0.38 0.38]

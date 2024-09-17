@@ -1,0 +1,59 @@
+// -----------------------------------------------------------------------//
+// Autores: Paulo Radatz e Celso Rocha
+// e-mails: opendss.brasil@gmail.com, paulo.radatz@gmail.com e celsorocha11@gmail.com 
+// -----------------------------------------------------------------------//
+
+// Reinicia o Programa
+Clear
+
+// Dados de Fronteira
+New Circuit.Equivalente bus1=A pu=1.02 basekv=138 
+~ Z0=[0.025862916, 0.077588748] Z1=[0.023094242, 0.092376969]
+
+// Dados do Transformador
+New Transformer.Trafo phases=3 windings=2 %loadloss=0.15 xhl=5 %noloadloss=0.015 %imag=2 
+~ wdg=1 bus=A kv=138 kva=3000 conn=delta
+~ wdg=2 bus=B kv=13.8 kva=3000 conn=wye
+~ sub=Yes subname=Subestacao
+
+// Dados dos Arranjos
+New Linecode.MeuArranjo4 nphases=4 basefreq=60 units=km
+~ rmatrix = [0.249 |0.059 0.249 |0.059 0.059 0.249 |0.059 0.059 0.059 0.427]       !ohm/km
+~ xmatrix = [0.878 |0.529 0.878 |0.451 0.484 0.878 |0.467 0.488 0.476 0.960]   	   !ohm/km
+~ cmatrix = [9.353 |-3.028 9.858 |-1.160 -1.928 8.891 |-1.393 -1.772 -1.782 8.809] !nF/km
+~ neutral=4 kron=No
+
+New Linecode.MeuArranjo3 nphases=3 basefreq=60 units=km
+~ rmatrix = [0.249 |0.059 0.249 |0.059 0.059 0.249]     !ohm/km
+~ xmatrix = [0.878 |0.488 0.878 |0.488 0.488 0.878]     !ohm/km
+~ cmatrix = [8.932 |-2.290 8.932 |-2.290 -2.290 8.932]  !nF/km
+
+// Dados dos Trechos
+New Line.LinhaBC bus1=B.1.2.3.0 bus2=C.1.2.3.4 length=0.8 units=km linecode=MeuArranjo4
+New Line.LinhaCD bus1=C.1.2.3 bus2=D.1.2.3 length=0.6 units=km linecode=MeuArranjo3
+
+// Dados das Cargas
+// Model=1 -> Potencia Constante
+New Load.CargaC phases=1 bus1=C.1.4 kv=7.9674 kw=500 pf=0.92 model=1
+New Load.CargaD phases=3 bus1=D conn=wye kv=13.8 kw=2000 pf=0.92 model=1
+
+// Medidor
+New EnergyMeter.MedidorSub element=Transformer.Trafo terminal=1
+
+// Definindo Tensoes de base
+Set voltagebases=[138 13.8]
+Calcvoltagebases
+  
+// FaultStudy Mode
+Set mode=FaultStudy
+Solve
+
+// Coordenadas
+BusCoords Coordenadas.csv
+
+// Arquivos de Resultados
+Export SeqZ
+Show fault
+Export FaultStudy
+
+
